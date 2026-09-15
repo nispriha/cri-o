@@ -356,6 +356,13 @@ func (s *Server) addOCIBindMounts(ctx context.Context, ctr ctrfactory.Container,
 			options = append(options, "rw")
 		}
 
+		for _, opt := range m.GetMountOptions() {
+			switch opt {
+			case "noexec", "nosuid", "nodev":
+				options = appendIfNotPresent(options, opt)
+			}
+		}
+
 		if m.GetSelinuxRelabel() {
 			if skipRelabel {
 				log.Debugf(ctx, "Skipping relabel for %s because of super privileged container (type: spc_t)", src)
@@ -625,6 +632,15 @@ func (s *Server) ensureImageVolumesPath(ctx context.Context, mounts []*types.Mou
 	}
 
 	return imageVolumesPath, nil
+}
+
+func appendIfNotPresent(options []string, opt string) []string {
+	for _, o := range options {
+		if o == opt {
+			return options
+		}
+	}
+	return append(options, opt)
 }
 
 // mountExists returns true if dest exists in the list of mounts.
